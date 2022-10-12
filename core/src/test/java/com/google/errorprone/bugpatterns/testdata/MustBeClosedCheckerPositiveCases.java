@@ -108,6 +108,17 @@ class MustBeClosedCheckerPositiveCases {
     return new Foo().mustBeClosedAnnotatedMethod();
   }
 
+  int existingDeclarationUsesVar() {
+    // BUG: Diagnostic contains:
+    var result = new Foo().mustBeClosedAnnotatedMethod();
+    return 0;
+  }
+
+  boolean twoCloseablesInOneExpression() {
+    // BUG: Diagnostic contains:
+    return new Foo().mustBeClosedAnnotatedMethod() == new Foo().mustBeClosedAnnotatedMethod();
+  }
+
   void voidLambda() {
     // Lambda has a fixless finding because no reasonable fix can be suggested.
     // BUG: Diagnostic contains:
@@ -159,22 +170,6 @@ class MustBeClosedCheckerPositiveCases {
     // BUG: Diagnostic contains:
     int result = new Foo().mustBeClosedAnnotatedMethod().method();
     return result;
-  }
-
-  void forLoopInitialization() {
-    // TODO(b/236715080): fix results in invalid code. BUG: Diagnostic contains:
-    // for (int i = new Foo().mustBeClosedAnnotatedMethod().method(); i > 0; --i) { }
-  }
-
-  void forLoopConditionUnfixable() {
-    // TODO(b/236715080): suggested fix changes behavior.
-    // BUG: Diagnostic contains:
-    for (int i = 0; i < new Foo().mustBeClosedAnnotatedMethod().method(); ++i) {}
-  }
-
-  void forLoopUpdateUnfixable() {
-    // TODO(b/236715080): fix results in invalid code. BUG: Diagnostic contains:
-    // for (int i = 0; i < 100; i += new Foo().mustBeClosedAnnotatedMethod().method()) {}
   }
 
   void tryWithResources_nonFinal() {

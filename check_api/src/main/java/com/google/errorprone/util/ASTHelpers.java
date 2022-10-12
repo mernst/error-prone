@@ -24,6 +24,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Streams.stream;
 import static com.google.errorprone.matchers.JUnitMatchers.JUNIT4_RUN_WITH_ANNOTATION;
 import static com.google.errorprone.matchers.Matchers.isSubtypeOf;
+import static com.google.errorprone.util.ASTHelpers.isStatic;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toCollection;
@@ -693,7 +694,7 @@ public class ASTHelpers {
     Scope scope = superType.tsym.members();
     for (Symbol sym : scope.getSymbolsByName(methodSymbol.name)) {
       if (sym != null
-          && !sym.isStatic()
+          && !isStatic(sym)
           && ((sym.flags() & Flags.SYNTHETIC) == 0)
           && methodSymbol.overrides(
               sym, (TypeSymbol) methodSymbol.owner, types, /* checkResult= */ true)) {
@@ -1682,9 +1683,29 @@ public class ASTHelpers {
 
     Type type = new TargetTypeVisitor(current, state, parent).visit(parent.getLeaf(), null);
     if (type == null) {
-      return null;
+      if (CONSTANT_CASE_LABEL_TREE != null
+          && CONSTANT_CASE_LABEL_TREE.isAssignableFrom(parent.getLeaf().getClass())) {
+        type =
+            getType(
+                TargetTypeVisitor.getSwitchExpression(
+                    parent.getParentPath().getParentPath().getLeaf()));
+      }
+      if (type == null) {
+        return null;
+      }
     }
     return TargetType.create(type, parent);
+  }
+
+  @Nullable private static final Class<?> CONSTANT_CASE_LABEL_TREE = constantCaseLabelTree();
+
+  @Nullable
+  private static Class<?> constantCaseLabelTree() {
+    try {
+      return Class.forName("com.sun.source.tree.ConstantCaseLabelTree");
+    } catch (ClassNotFoundException e) {
+      return null;
+    }
   }
 
   private static boolean canHaveTargetType(Tree tree) {
@@ -2362,7 +2383,7 @@ public class ASTHelpers {
 
   /**
    * Returns true if the symbol is directly or indirectly local to a method or variable initializer;
-   * see [@code Symbol#isLocal} or {@code Symbol#isDirectlyOrIndirectlyLocal}.
+   * see {@code Symbol#isLocal} or {@code Symbol#isDirectlyOrIndirectlyLocal}.
    */
   public static boolean isLocal(Symbol symbol) {
     try {
@@ -2370,6 +2391,26 @@ public class ASTHelpers {
     } catch (ReflectiveOperationException e) {
       throw new LinkageError(e.getMessage(), e);
     }
+  }
+
+  /** Returns true if the symbol is static. Returns {@code false} for module symbols. */
+  @SuppressWarnings("ASTHelpersSuggestions")
+  public static boolean isStatic(Symbol symbol) {
+    switch (symbol.getKind()) {
+      case MODULE:
+        return false;
+      default:
+        return symbol.isStatic();
+    }
+  }
+
+  /**
+   * Returns true if the given method symbol is abstract.
+   *
+   * <p><b>Note:</b> this API does not consider interface {@code default} methods to be abstract.
+   */
+  public static boolean isAbstract(MethodSymbol method) {
+    return method.getModifiers().contains(Modifier.ABSTRACT);
   }
 
   /** Returns a compatibility adapter around {@link Scope}. */

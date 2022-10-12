@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.errorprone.BugCheckerInfo;
+import com.google.errorprone.bugpatterns.ASTHelpersSuggestions;
 import com.google.errorprone.bugpatterns.AlreadyChecked;
 import com.google.errorprone.bugpatterns.AlwaysThrows;
 import com.google.errorprone.bugpatterns.AmbiguousMethodReference;
@@ -194,6 +195,7 @@ import com.google.errorprone.bugpatterns.JavaLangClash;
 import com.google.errorprone.bugpatterns.JavaUtilDateChecker;
 import com.google.errorprone.bugpatterns.JdkObsolete;
 import com.google.errorprone.bugpatterns.LambdaFunctionalInterface;
+import com.google.errorprone.bugpatterns.LenientFormatStringValidation;
 import com.google.errorprone.bugpatterns.LiteByteStringUtf8;
 import com.google.errorprone.bugpatterns.LiteEnumValueOf;
 import com.google.errorprone.bugpatterns.LiteProtoToString;
@@ -422,6 +424,7 @@ import com.google.errorprone.bugpatterns.argumentselectiondefects.AutoValueConst
 import com.google.errorprone.bugpatterns.checkreturnvalue.BuilderReturnThis;
 import com.google.errorprone.bugpatterns.checkreturnvalue.CanIgnoreReturnValueSuggester;
 import com.google.errorprone.bugpatterns.checkreturnvalue.NoCanIgnoreReturnValueOnClasses;
+import com.google.errorprone.bugpatterns.checkreturnvalue.UnnecessarilyUsedValue;
 import com.google.errorprone.bugpatterns.checkreturnvalue.UsingJsr305CheckReturnValue;
 import com.google.errorprone.bugpatterns.collectionincompatibletype.CollectionIncompatibleType;
 import com.google.errorprone.bugpatterns.collectionincompatibletype.CollectionUndefinedEquality;
@@ -692,6 +695,7 @@ public class BuiltInCheckerSuppliers {
           JUnitParameterMethodNotFound.class,
           JavaxInjectOnAbstractMethod.class,
           JodaToSelf.class,
+          LenientFormatStringValidation.class,
           LiteByteStringUtf8.class,
           LocalDateTemporalAmount.class,
           LockOnBoxedPrimitive.class,
@@ -781,6 +785,7 @@ public class BuiltInCheckerSuppliers {
   public static final ImmutableSet<BugCheckerInfo> ENABLED_WARNINGS =
       getSuppliers(
           // keep-sorted start
+          ASTHelpersSuggestions.class,
           AlmostJavadoc.class,
           AlreadyChecked.class,
           AmbiguousMethodReference.class,
@@ -1125,6 +1130,7 @@ public class BuiltInCheckerSuppliers {
           TypeToString.class,
           UngroupedOverloads.class,
           UnnecessarilyFullyQualified.class,
+          UnnecessarilyUsedValue.class,
           UnnecessarilyVisible.class,
           UnnecessaryAnonymousClass.class,
           UnnecessaryBoxedAssignment.class,

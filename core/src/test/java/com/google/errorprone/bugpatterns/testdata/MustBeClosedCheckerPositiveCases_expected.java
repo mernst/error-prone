@@ -53,7 +53,7 @@ class MustBeClosedCheckerPositiveCases {
 
     void sameClass() {
       // BUG: Diagnostic contains:
-      try (Closeable closeable = mustBeClosedAnnotatedMethod()) {}
+      try (var closeable = mustBeClosedAnnotatedMethod()) {}
     }
   }
 
@@ -64,14 +64,13 @@ class MustBeClosedCheckerPositiveCases {
 
     void sameClass() {
       // BUG: Diagnostic contains:
-      try (MustBeClosedAnnotatedConstructor mustBeClosedAnnotatedConstructor =
-          new MustBeClosedAnnotatedConstructor()) {}
+      try (var mustBeClosedAnnotatedConstructor = new MustBeClosedAnnotatedConstructor()) {}
     }
   }
 
   void positiveCase1() {
     // BUG: Diagnostic contains:
-    try (Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {}
+    try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {}
   }
 
   void positiveCase2() {
@@ -82,7 +81,7 @@ class MustBeClosedCheckerPositiveCases {
   void positiveCase3() {
     try {
       // BUG: Diagnostic contains:
-      try (Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {}
+      try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {}
     } finally {
     }
   }
@@ -90,14 +89,13 @@ class MustBeClosedCheckerPositiveCases {
   void positiveCase4() {
     try (Closeable c = new Foo().mustBeClosedAnnotatedMethod()) {
       // BUG: Diagnostic contains:
-      try (Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {}
+      try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {}
     }
   }
 
   void positiveCase5() {
     // BUG: Diagnostic contains:
-    try (MustBeClosedAnnotatedConstructor mustBeClosedAnnotatedConstructor =
-        new MustBeClosedAnnotatedConstructor()) {}
+    try (var mustBeClosedAnnotatedConstructor = new MustBeClosedAnnotatedConstructor()) {}
   }
 
   @MustBeClosed
@@ -110,6 +108,22 @@ class MustBeClosedCheckerPositiveCases {
   Closeable positiveCase7() {
     // BUG: Diagnostic contains:
     return new Foo().mustBeClosedAnnotatedMethod();
+  }
+
+  int existingDeclarationUsesVar() {
+    // Bug: Diagnostic contains:
+    try (var result = new Foo().mustBeClosedAnnotatedMethod()) {
+      return 0;
+    }
+  }
+
+  boolean twoCloseablesInOneExpression() {
+    // BUG: Diagnostic contains:
+    try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {
+      try (var closeable2 = new Foo().mustBeClosedAnnotatedMethod()) {
+        return closeable == closeable2;
+      }
+    }
   }
 
   void voidLambda() {
@@ -152,7 +166,7 @@ class MustBeClosedCheckerPositiveCases {
 
   void subexpression() {
     // BUG: Diagnostic contains:
-    try (Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {
+    try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {
       closeable.method();
     }
   }
@@ -160,7 +174,7 @@ class MustBeClosedCheckerPositiveCases {
   void ternary(boolean condition) {
     // BUG: Diagnostic contains:
     int result;
-    try (Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {
+    try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {
       result = condition ? closeable.method() : 0;
     }
   }
@@ -168,28 +182,10 @@ class MustBeClosedCheckerPositiveCases {
   int variableDeclaration() {
     // BUG: Diagnostic contains:
     int result;
-    try (Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {
+    try (var closeable = new Foo().mustBeClosedAnnotatedMethod()) {
       result = closeable.method();
     }
     return result;
-  }
-
-  void forLoopInitialization() {
-    // TODO(b/236715080): fix results in invalid code. BUG: Diagnostic contains:
-    // for (int i = new Foo().mustBeClosedAnnotatedMethod().method(); i > 0; --i) {}
-  }
-
-  void forLoopConditionUnfixable() {
-    // TODO(b/236715080): suggested fix changes behavior.
-    // BUG: Diagnostic contains:
-    try (final Closeable closeable = new Foo().mustBeClosedAnnotatedMethod()) {
-      for (int i = 0; i < closeable.method(); ++i) {}
-    }
-  }
-
-  void forLoopUpdateUnfixable() {
-    // TODO(b/236715080): fix results in invalid code. BUG: Diagnostic contains:
-    // for (int i = 0; i < 100; i += new Foo().mustBeClosedAnnotatedMethod().method()) {}
   }
 
   void tryWithResources_nonFinal() {
