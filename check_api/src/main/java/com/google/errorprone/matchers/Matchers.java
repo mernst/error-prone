@@ -31,7 +31,6 @@ import static com.google.errorprone.suppliers.Suppliers.STRING_TYPE;
 import static com.google.errorprone.suppliers.Suppliers.typeFromClass;
 import static com.google.errorprone.suppliers.Suppliers.typeFromString;
 import static com.google.errorprone.util.ASTHelpers.findEnclosingMethod;
-import static com.google.errorprone.util.ASTHelpers.findEnclosingNode;
 import static com.google.errorprone.util.ASTHelpers.getSymbol;
 import static com.google.errorprone.util.ASTHelpers.getType;
 import static com.google.errorprone.util.ASTHelpers.isSubtype;
@@ -1132,16 +1131,7 @@ public final class Matchers {
         return true;
       }
 
-      boolean enclosingMethodFix =
-          state
-              .errorProneOptions()
-              .getFlags()
-              .getBoolean("ASTHelpers:EnclosingMethodFix")
-              .orElse(true);
-      MethodTree methodTree =
-          enclosingMethodFix
-              ? findEnclosingMethod(state)
-              : findEnclosingNode(state.getPath(), MethodTree.class);
+      MethodTree methodTree = findEnclosingMethod(state);
       return methodTree != null
           && methodTree.getModifiers().getFlags().contains(Modifier.SYNCHRONIZED);
     };
