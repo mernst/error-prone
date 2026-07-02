@@ -19,11 +19,15 @@ package com.google.errorprone.bugpatterns;
 import static com.google.errorprone.BugPattern.SeverityLevel.WARNING;
 import static com.google.errorprone.fixes.SuggestedFixes.removeModifiers;
 import static com.google.errorprone.matchers.Description.NO_MATCH;
+import static com.google.errorprone.util.ASTHelpers.canonicalConstructor;
 import static com.google.errorprone.util.ASTHelpers.enclosingClass;
 import static com.google.errorprone.util.ASTHelpers.getSymbol;
 import static com.google.errorprone.util.ASTHelpers.hasAnnotation;
 import static com.google.errorprone.util.ASTHelpers.isEffectivelyPrivate;
+import static com.google.errorprone.util.ASTHelpers.isRecord;
 import static com.google.errorprone.util.ASTHelpers.streamSuperMethods;
+import static javax.lang.model.element.Modifier.PROTECTED;
+import static javax.lang.model.element.Modifier.PUBLIC;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.errorprone.BugPattern;
@@ -101,6 +105,21 @@ public final class EffectivelyPrivate extends BugChecker implements CompilationU
     if (sym instanceof MethodSymbol methodSymbol) {
       if (hasAnnotation(methodSymbol, "java.lang.Override", state)) {
         return;
+      }
+      if (methodSymbol.isConstructor()) {
+        ClassSymbol enclosingClass = enclosingClass(methodSymbol);
+        /*
+         * TODO(cpovirk): Introduce an ASTHelpers.isCanonicalConstructor to avoid scanning all
+         * members again in canonicalConstructor?
+         */
+        if (isRecord(enclosingClass)
+            && methodSymbol.equals(canonicalConstructor(enclosingClass, state))) {
+          if (enclosingClass.getModifiers().contains(PUBLIC)
+              || enclosingClass.getModifiers().contains(PROTECTED)) {
+            // Canonical constructors are required to be at least as visible as the record itself.
+            return;
+          }
+        }
       }
       // TODO: cushon - technically this should only match final classes, otherwise it could break
       // a subclass that relies on inheriting a method of a particular visibility to fulfil and

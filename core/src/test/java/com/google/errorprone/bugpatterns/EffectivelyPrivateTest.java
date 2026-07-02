@@ -127,4 +127,21 @@ public class EffectivelyPrivateTest {
             """)
         .doTest();
   }
+
+  @Test
+  public void negative_recordInPrivateInterface() {
+    testHelper
+        .addSourceLines(
+            "MyClass.java",
+            """
+            public class MyClass {
+              private interface MyInterface {
+                record MyRecord() {
+                  public MyRecord {}
+                }
+              }
+            }
+            """)
+        .doTest();
+  }
 }
