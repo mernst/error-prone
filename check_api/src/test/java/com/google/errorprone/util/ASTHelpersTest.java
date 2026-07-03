@@ -26,6 +26,7 @@ import static com.google.errorprone.util.ASTHelpers.findEnclosingMethod;
 import static com.google.errorprone.util.ASTHelpers.getStartPosition;
 import static com.google.errorprone.util.ASTHelpers.getSymbol;
 import static com.google.errorprone.util.ASTHelpers.hasAnnotation;
+import static com.google.errorprone.util.ASTHelpers.isCanonicalRecordConstructor;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.LOCAL_VARIABLE;
 import static java.lang.annotation.ElementType.METHOD;
@@ -81,6 +82,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.TypeVar;
@@ -2065,9 +2067,12 @@ class Test {
       implements MethodTreeMatcher {
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state) {
-      return canonicalConstructor((ClassSymbol) getSymbol(tree).owner, state) == getSymbol(tree)
-          ? describeMatch(tree)
-          : Description.NO_MATCH;
+      MethodSymbol symbol = getSymbol(tree);
+      boolean isCanonical = isCanonicalRecordConstructor(symbol, state);
+      boolean isReturnedByCanonicalConstructorMethod =
+          symbol.equals(canonicalConstructor((ClassSymbol) symbol.owner, state));
+      assertThat(isCanonical).isEqualTo(isReturnedByCanonicalConstructorMethod);
+      return isCanonical ? describeMatch(tree) : Description.NO_MATCH;
     }
   }
 

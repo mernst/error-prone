@@ -22,7 +22,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.collect.Streams.stream;
-import static com.google.common.collect.Streams.zip;
 import static com.google.errorprone.VisitorState.memoize;
 import static com.google.errorprone.matchers.JUnitMatchers.JUNIT4_RUN_WITH_ANNOTATION;
 import static com.google.errorprone.matchers.Matchers.isSubtypeOf;
@@ -96,6 +95,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -829,19 +829,39 @@ public final class ASTHelpers {
 
   /** Finds the canonical constructor on a record. */
   public static MethodSymbol canonicalConstructor(ClassSymbol record, VisitorState state) {
-    var fieldTypes =
-        record.getRecordComponents().stream().map(rc -> rc.type).collect(toImmutableList());
+    var recordComponents = record.getRecordComponents();
     return stream(record.members().getSymbols(s -> s.isConstructor()))
         .map(c -> (MethodSymbol) c)
-        .filter(
-            c ->
-                c.getParameters().size() == fieldTypes.size()
-                    && zip(
-                            c.getParameters().stream(),
-                            fieldTypes.stream(),
-                            (a, b) -> isSameType(a.type, b, state))
-                        .allMatch(x -> x))
+        .filter(c -> parametersMatchRecordComponents(c, recordComponents, state))
         .collect(onlyElement());
+  }
+
+  /** Returns whether the given method is a record's canonical constructor. */
+  public static boolean isCanonicalRecordConstructor(MethodSymbol symbol, VisitorState state) {
+    if (!symbol.isConstructor()) {
+      return false;
+    }
+    ClassSymbol enclosingClass = symbol.enclClass();
+    if (enclosingClass == null || enclosingClass.getKind() != ElementKind.RECORD) {
+      return false;
+    }
+    return parametersMatchRecordComponents(symbol, enclosingClass.getRecordComponents(), state);
+  }
+
+  private static boolean parametersMatchRecordComponents(
+      MethodSymbol constructor,
+      List<? extends RecordComponent> recordComponents,
+      VisitorState state) {
+    if (constructor.getParameters().size() != recordComponents.size()) {
+      return false;
+    }
+    for (int i = 0; i < recordComponents.size(); i++) {
+      if (!isSameType(
+          constructor.getParameters().get(i).type, recordComponents.get(i).type, state)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
